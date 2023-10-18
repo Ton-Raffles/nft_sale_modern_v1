@@ -2,7 +2,7 @@
 ;; fix repeat cancel message
 ;; allow cancel by text "cancel"
 
-int min_gas_amount() asm "1000000000 PUSHINT"; ;; 1 TON
+int min_gas_amount() asm "100000000 PUSHINT"; ;; 0.1 TON
 slice msg::cancel_msg() asm "<b 124 word cancel| $, b> <s PUSHSLICE";
 
 _ load_data() inline {
