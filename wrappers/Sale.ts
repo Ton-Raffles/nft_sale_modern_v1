@@ -1,9 +1,27 @@
 import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from 'ton-core';
 
-export type SaleConfig = {};
+export type SaleConfig = {
+    createdAt: bigint;
+    marketplaceAddress: Address;
+    nftAddress: Address;
+    nftOwnerAddress: Address;
+    fullPrice: bigint;
+    feesCell: Cell;
+    publicKey: bigint;
+};
 
 export function saleConfigToCell(config: SaleConfig): Cell {
-    return beginCell().endCell();
+    return beginCell()
+        .storeUint(0, 1)
+        .storeUint(config.createdAt, 32)
+        .storeAddress(config.marketplaceAddress)
+        .storeAddress(config.nftAddress)
+        .storeAddress(config.nftOwnerAddress)
+        .storeCoins(config.fullPrice)
+        .storeRef(config.feesCell)
+        .storeUint(0, 1)
+        .storeUint(config.publicKey, 256)
+        .endCell();
 }
 
 export class Sale implements Contract {
