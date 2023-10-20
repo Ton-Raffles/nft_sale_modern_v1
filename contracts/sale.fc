@@ -15,7 +15,9 @@ _ load_data() inline {
           ds~load_msg_addr(), ;; nft_owner_address
           ds~load_coins(), ;; full_price
           ds~load_ref(), ;; fees_cell
-          ds~load_uint(1) ;; can_deploy_by_external
+          ds~load_uint(1), ;; can_deploy_by_external
+          ds~load_uint(1), ;; confirmed_by_the_marketplace
+          ds~load_uint(256) ;; public_key
   );
 }
 
@@ -29,7 +31,7 @@ _ load_fees(cell fees_cell) inline {
   );
 }
 
-() save_data(int is_complete, int created_at, slice marketplace_address, slice nft_address, slice nft_owner_address, int full_price, cell fees_cell) impure inline {
+() save_data(int is_complete, int created_at, slice marketplace_address, slice nft_address, slice nft_owner_address, int full_price, cell fees_cell, int initialized, int public_key) impure inline {
   set_data(
           begin_cell()
                   .store_uint(is_complete, 1)
@@ -40,6 +42,8 @@ _ load_fees(cell fees_cell) inline {
                   .store_coins(full_price)
                   .store_ref(fees_cell)
                   .store_uint(0, 1) ;; can_deploy_by_external
+                  .store_uint(initialized, 1)
+                  .store_uint(public_key, 256)
                   .end_cell()
   );
 }
@@ -68,7 +72,9 @@ _ load_fees(cell fees_cell) inline {
           int my_balance,
           int msg_value,
           slice sender_address,
-          int query_id
+          int query_id,
+          int initialized,
+          int public_key
   ) = args;
 
   throw_unless(450, msg_value >= full_price + min_gas_amount());
@@ -126,7 +132,10 @@ _ load_fees(cell fees_cell) inline {
           nft_address,
           nft_owner_address,
           full_price,
-          fees_cell
+          fees_cell,
+          initialized,
+          public_key
+
   );
 }
 
@@ -148,7 +157,9 @@ _ load_fees(cell fees_cell) inline {
           nft_owner_address,
           full_price,
           fees_cell,
-          can_deploy_by_external
+          can_deploy_by_external,
+          initialized, 
+          public_key
   ) = load_data();
 
   int op = 0;
@@ -169,6 +180,41 @@ _ load_fees(cell fees_cell) inline {
   if (op == 1) { ;; just accept coins
     return ();
   }
+
+  if (op == 5){
+        throw_unless(901, equal_slices(sender_address, marketplace_address));
+
+        slice signature = in_msg_body~load_bits(512);
+        
+        throw_unless(902, check_signature(cell_hash(begin_cell()
+                  .store_uint(is_complete, 1)
+                  .store_uint(created_at, 32)
+                  .store_slice(marketplace_address)
+                  .store_slice(nft_address)
+                  .store_slice(nft_owner_address)
+                  .store_coins(full_price)
+                  .store_ref(fees_cell)
+                  .store_uint(0, 1) ;; can_deploy_by_external
+                  .store_uint(initialized, 1)
+                  .store_uint(public_key, 256)
+                  .end_cell()), signature, public_key));
+
+        save_data(
+                is_complete,
+                created_at,
+                marketplace_address,
+                nft_address,
+                nft_owner_address,
+                full_price,
+                fees_cell,
+                1,
+                public_key
+        );
+        return ();
+  }
+  
+  throw_unless(903, initialized != 0);
+  
 
   var is_initialized = nft_owner_address.slice_bits() > 2; ;; not initialized if null address
 
@@ -201,7 +247,9 @@ _ load_fees(cell fees_cell) inline {
             nft_address,
             prev_owner_address,
             full_price,
-            fees_cell
+            fees_cell, 
+            initialized,
+            public_key
     );
 
     return ();
@@ -233,7 +281,9 @@ _ load_fees(cell fees_cell) inline {
             nft_address,
             nft_owner_address,
             full_price,
-            fees_cell
+            fees_cell,
+            initialized,
+            public_key
     );
     return ();
   }
@@ -250,7 +300,9 @@ _ load_fees(cell fees_cell) inline {
             my_balance,
             msg_value,
             sender_address,
-            0
+            0,
+            initialized,
+            public_key
     );
     return ();
   }
@@ -267,40 +319,14 @@ _ load_fees(cell fees_cell) inline {
             my_balance,
             msg_value,
             sender_address,
-            query_id
+            query_id,
+            initialized,
+            public_key
     );
     return ();
   }
 
   throw(0xffff);
-}
-
-() recv_external(slice in_msg) impure {
-  var (
-          is_complete,
-          created_at,
-          marketplace_address,
-          nft_address,
-          nft_owner_address,
-          full_price,
-          fees_cell,
-          can_deploy_by_external
-  ) = load_data();
-
-  if (can_deploy_by_external == 1) {
-    accept_message();
-    save_data(
-            is_complete,
-            created_at,
-            marketplace_address,
-            nft_address,
-            nft_owner_address,
-            full_price,
-            fees_cell
-    );
-    return ();
-  }
-  throw(0xfffe);
 }
 
 (int, int, int, slice, slice, slice, int, slice, int, slice, int) get_sale_data() method_id {
@@ -312,7 +338,9 @@ _ load_fees(cell fees_cell) inline {
           nft_owner_address,
           full_price,
           fees_cell,
-          can_deploy_by_external
+          can_deploy_by_external,
+          initialized,
+          public_key
   ) = load_data();
 
   var (
