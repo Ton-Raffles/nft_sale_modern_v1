@@ -197,7 +197,7 @@ _ load_fees(cell fees_cell) inline {
         return ();
   }
   
-  throw_unless(903, initialized != 0);
+  throw_unless(903, initialized);
   
 
   var is_initialized = nft_owner_address.slice_bits() > 2; ;; not initialized if null address
