@@ -37,11 +37,19 @@ export class Sale implements Contract {
         return new Sale(contractAddress(workchain, init), init);
     }
 
-    async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
+    async sendDeploy(
+        provider: ContractProvider,
+        via: Sender,
+        value: bigint,
+        opts: {
+            query_id: bigint;
+            signature: Buffer;
+        }
+    ) {
         await provider.internal(via, {
             value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell().endCell(),
+            body: beginCell().storeUint(5, 32).storeUint(opts.query_id, 64).storeBuffer(opts.signature).endCell(),
         });
     }
 }
