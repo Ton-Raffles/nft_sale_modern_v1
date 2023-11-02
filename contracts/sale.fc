@@ -87,7 +87,8 @@ _ load_fees(cell fees_cell) inline {
   ) = load_fees(fees_cell);
 
   throw_unless(901, full_price > 0);
-  throw_unless(902, royalty_amount + marketplace_fee <= full_price * 49 / 100);
+  throw_unless(902, royalty_amount <= full_price * 49 / 100);
+  throw_unless(904, marketplace_fee <= full_price * 49 / 100);
 
   ;; Owner message
   send_money(

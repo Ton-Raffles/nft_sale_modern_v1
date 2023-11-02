@@ -103,7 +103,7 @@ describe('Sale', () => {
         });
     });
 
-    it('should not buy nft (royalty_amount + marketplace_fee <= full_price * 49 / 100)', async () => {
+    it('should not buy nft (royalty_amount > full_price * 49 / 100)', async () => {
         sale = blockchain.openContract(
             Sale.createFromConfig(
                 {
@@ -114,7 +114,7 @@ describe('Sale', () => {
                     fullPrice: toNano('2'),
                     feesCell: beginCell()
                         .storeAddress(wallets[2].address)
-                        .storeCoins(toNano('1'))
+                        .storeCoins(toNano('0'))
                         .storeAddress(wallets[3].address)
                         .storeCoins(toNano('1'))
                         .endCell(),
@@ -146,6 +146,52 @@ describe('Sale', () => {
 
         expect(res.transactions).toHaveTransaction({
             exitCode: 902,
+        });
+    });
+
+    it('should not buy nft (marketplace_fee > full_price * 49 / 100)', async () => {
+        sale = blockchain.openContract(
+            Sale.createFromConfig(
+                {
+                    createdAt: 0n,
+                    marketplaceAddress: wallets[0].address,
+                    nftAddress: item.address,
+                    nftOwnerAddress: wallets[1].address,
+                    fullPrice: toNano('2'),
+                    feesCell: beginCell()
+                        .storeAddress(wallets[2].address)
+                        .storeCoins(toNano('1'))
+                        .storeAddress(wallets[3].address)
+                        .storeCoins(toNano('0'))
+                        .endCell(),
+                    publicKey: keypair.publicKey,
+                },
+                code
+            )
+        );
+
+        const deployResult = await sale.sendDeploy(deployer.getSender(), toNano('0.05'), {
+            query_id: 0n,
+            signature: sign(sale.init!.data.hash(), keypair.secretKey),
+        });
+
+        await item.sendTransfer(wallets[1].getSender(), toNano('1'), sale.address);
+
+        expect(deployResult.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: sale.address,
+            deploy: true,
+            success: true,
+        });
+
+        let res = await wallets[4].send({
+            to: sale.address,
+            value: toNano('2.2'),
+            body: beginCell().storeUint(2, 32).storeUint(toNano('234'), 64).endCell(),
+        });
+
+        expect(res.transactions).toHaveTransaction({
+            exitCode: 904,
         });
     });
 
