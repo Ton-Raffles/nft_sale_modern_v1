@@ -7,12 +7,13 @@ slice msg::cancel_msg() asm "<b 124 word cancel| $, b> <s PUSHSLICE";
 
 _ load_data() inline {
   var ds = get_data().begin_parse();
+  slice dv = ds~load_ref().begin_parse();
   return (
-          ds~load_uint(1), ;; is_complete
-          ds~load_uint(32), ;; created_at
-          ds~load_msg_addr(), ;; marketplace_address
-          ds~load_msg_addr(), ;; nft_address
-          ds~load_msg_addr(), ;; nft_owner_address
+          dv~load_uint(1), ;; is_complete
+          dv~load_uint(32), ;; created_at
+          dv~load_msg_addr(), ;; marketplace_address
+          dv~load_msg_addr(), ;; nft_address
+          dv~load_msg_addr(), ;; nft_owner_address
           ds~load_coins(), ;; full_price
           ds~load_ref(), ;; fees_cell
           ds~load_uint(1), ;; initialized
@@ -32,12 +33,13 @@ _ load_fees(cell fees_cell) inline {
 
 () save_data(int is_complete, int created_at, slice marketplace_address, slice nft_address, slice nft_owner_address, int full_price, cell fees_cell, int initialized, int public_key) impure inline {
   set_data(
-          begin_cell()
-                  .store_uint(is_complete, 1)
-                  .store_uint(created_at, 32)
-                  .store_slice(marketplace_address)
-                  .store_slice(nft_address)
-                  .store_slice(nft_owner_address)
+          begin_cell().store_ref(begin_cell()
+                                .store_uint(is_complete, 1)
+                                .store_uint(created_at, 32)
+                                .store_slice(marketplace_address)
+                                .store_slice(nft_address)
+                                .store_slice(nft_owner_address)
+                        .end_cell())
                   .store_coins(full_price)
                   .store_ref(fees_cell)
                   .store_uint(initialized, 1)
@@ -83,6 +85,9 @@ _ load_fees(cell fees_cell) inline {
           royalty_address,
           royalty_amount
   ) = load_fees(fees_cell);
+
+  throw_unless(901, full_price > 0);
+  throw_unless(902, royalty_amount + marketplace_fee <= full_price * 49 / 100);
 
   ;; Owner message
   send_money(
@@ -307,6 +312,26 @@ _ load_fees(cell fees_cell) inline {
             initialized,
             public_key
     );
+    return ();
+  }
+
+  if (op == 6) { ;; change the sale price
+    throw_unless(903, equal_slices(sender_address, nft_owner_address));
+
+    full_price = in_msg_body~load_coins();
+
+    save_data(
+            is_complete,
+            created_at,
+            marketplace_address,
+            nft_address,
+            nft_owner_address,
+            full_price,
+            fees_cell, 
+            initialized,
+            public_key
+    );
+    
     return ();
   }
 

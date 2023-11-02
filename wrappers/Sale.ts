@@ -7,20 +7,24 @@ export type SaleConfig = {
     nftOwnerAddress: Address;
     fullPrice: bigint;
     feesCell: Cell;
-    publicKey: bigint;
+    publicKey: Buffer;
 };
 
 export function saleConfigToCell(config: SaleConfig): Cell {
     return beginCell()
-        .storeUint(0, 1)
-        .storeUint(config.createdAt, 32)
-        .storeAddress(config.marketplaceAddress)
-        .storeAddress(config.nftAddress)
-        .storeAddress(config.nftOwnerAddress)
+        .storeRef(
+            beginCell()
+                .storeUint(0, 1)
+                .storeUint(config.createdAt, 32)
+                .storeAddress(config.marketplaceAddress)
+                .storeAddress(config.nftAddress)
+                .storeAddress(config.nftOwnerAddress)
+                .endCell()
+        )
         .storeCoins(config.fullPrice)
         .storeRef(config.feesCell)
         .storeUint(0, 1)
-        .storeUint(config.publicKey, 256)
+        .storeBuffer(config.publicKey)
         .endCell();
 }
 
@@ -51,5 +55,33 @@ export class Sale implements Contract {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
             body: beginCell().storeUint(5, 32).storeUint(opts.query_id, 64).storeBuffer(opts.signature).endCell(),
         });
+    }
+
+    async getSaleData(provider: ContractProvider): Promise<{
+        isComplete: bigint;
+        createdAt: bigint;
+        marketplaceAddress: Address;
+        nftAddress: Address;
+        nftOwnerAddress: Address;
+        fullPrice: bigint;
+        marketplaceFeeAddress: Address;
+        marketplaceFee: bigint;
+        royaltyAddress: Address;
+        royaltyAmount: bigint;
+    }> {
+        const res = (await provider.get('get_sale_data', [])).stack;
+        res.skip(1);
+        return {
+            isComplete: res.readBigNumber(),
+            createdAt: res.readBigNumber(),
+            marketplaceAddress: res.readAddress(),
+            nftAddress: res.readAddress(),
+            nftOwnerAddress: res.readAddress(),
+            fullPrice: res.readBigNumber(),
+            marketplaceFeeAddress: res.readAddress(),
+            marketplaceFee: res.readBigNumber(),
+            royaltyAddress: res.readAddress(),
+            royaltyAmount: res.readBigNumber(),
+        };
     }
 }
