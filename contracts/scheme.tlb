@@ -1,0 +1,12 @@
+_ common_data:^ [ is_complete:Bool created_at:uint32 marketplace_address:MsgAddressInt nft_address:MsgAddressInt nft_owner_address:MsgAddressInt ]
+  full_price:Coins fees_cell:^Cell initialized:uint1 public_key:uint256 = SaleStorage;
+
+accept_coins#1 query_id:uint64 = InternalMessage;
+
+buy#2 query_id:uint64 = InternalMessage;
+
+cancel#3 query_id:uint64 = InternalMessage;
+
+deploy#5 query_id:uint64 signature:bits512 = InternalMessage;
+
+change_sale_price#6 query_id:uint64 full_price:Coins = InternalMessage;
