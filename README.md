@@ -1,4 +1,4 @@
-# sale-contract-modified
+# nft_sale_modern_v1
 
 ## Project structure
 
