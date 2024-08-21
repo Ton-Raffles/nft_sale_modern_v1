@@ -339,7 +339,7 @@ _ load_fees(cell fees_cell) inline {
   throw(0xffff);
 }
 
-(int, int, int, slice, slice, slice, int, slice, int, slice, int) get_sale_data() method_id {
+(int, int, int, slice, slice, slice, int, slice, int, slice, int, int, int) get_sale_data() method_id {
   var (
           is_complete,
           created_at,
@@ -370,6 +370,8 @@ _ load_fees(cell fees_cell) inline {
           marketplace_fee_address,
           marketplace_fee,
           royalty_address,
-          royalty_amount
+          royalty_amount,
+          initialized == 1,
+          public_key
   );
 }

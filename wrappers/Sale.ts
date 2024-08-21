@@ -68,6 +68,8 @@ export class Sale implements Contract {
         marketplaceFee: bigint;
         royaltyAddress: Address;
         royaltyAmount: bigint;
+        initialized: boolean;
+        publicKey: bigint;
     }> {
         const res = (await provider.get('get_sale_data', [])).stack;
         res.skip(1);
@@ -82,6 +84,8 @@ export class Sale implements Contract {
             marketplaceFee: res.readBigNumber(),
             royaltyAddress: res.readAddress(),
             royaltyAmount: res.readBigNumber(),
+            initialized: res.readBoolean(),
+            publicKey: res.readBigNumber(),
         };
     }
 }
