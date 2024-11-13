@@ -276,11 +276,7 @@ describe('Sale', () => {
             success: true,
         });
 
-        let res = await wallets[1].send({
-            to: sale.address,
-            value: toNano('0.05'),
-            body: beginCell().storeUint(6, 32).storeUint(toNano('234'), 64).storeCoins(toNano('2')).endCell(),
-        });
+        await sale.sendCangePrice(wallets[1].getSender(), toNano('0.05'), { query_id: 0n, newPrice: toNano('2') });
 
         let saleData = await sale.getSaleData();
 

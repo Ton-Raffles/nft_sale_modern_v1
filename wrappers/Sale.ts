@@ -72,6 +72,22 @@ export class Sale implements Contract {
         });
     }
 
+    async sendCangePrice(
+        provider: ContractProvider,
+        via: Sender,
+        value: bigint,
+        opts: {
+            query_id: bigint;
+            newPrice: bigint;
+        }
+    ) {
+        await provider.internal(via, {
+            value,
+            sendMode: SendMode.PAY_GAS_SEPARATELY,
+            body: beginCell().storeUint(6, 32).storeUint(opts.query_id, 64).storeCoins(opts.newPrice).endCell(),
+        });
+    }
+
     async getSaleData(provider: ContractProvider): Promise<{
         isComplete: bigint;
         createdAt: bigint;
