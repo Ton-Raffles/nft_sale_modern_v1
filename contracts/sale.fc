@@ -320,6 +320,7 @@ _ load_fees(cell fees_cell) inline {
     throw_unless(906, equal_slices(sender_address, nft_owner_address));
 
     full_price = in_msg_body~load_coins();
+    fees_cell = in_msg_body~load_ref();
 
     save_data(
             is_complete,

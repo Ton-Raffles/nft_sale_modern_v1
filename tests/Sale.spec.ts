@@ -276,10 +276,23 @@ describe('Sale', () => {
             success: true,
         });
 
-        await sale.sendCangePrice(wallets[1].getSender(), toNano('0.05'), { query_id: 0n, newPrice: toNano('2') });
+        await sale.sendCangePrice(wallets[1].getSender(), toNano('0.05'), {
+            query_id: 0n,
+            newPrice: toNano('2'),
+            feesCell: beginCell()
+                .storeAddress(wallets[0].address)
+                .storeCoins(toNano('0.3'))
+                .storeAddress(wallets[1].address)
+                .storeCoins(toNano('0.5'))
+                .endCell(),
+        });
 
         let saleData = await sale.getSaleData();
 
         expect(saleData.fullPrice).toEqual(toNano('2'));
+        expect(saleData.marketplaceFeeAddress).toEqualAddress(wallets[0].address);
+        expect(saleData.marketplaceFee).toEqual(toNano('0.3'));
+        expect(saleData.royaltyAddress).toEqualAddress(wallets[1].address);
+        expect(saleData.royaltyAmount).toEqual(toNano('0.5'));
     });
 });

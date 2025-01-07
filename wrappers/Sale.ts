@@ -79,12 +79,18 @@ export class Sale implements Contract {
         opts: {
             query_id: bigint;
             newPrice: bigint;
+            feesCell: Cell;
         }
     ) {
         await provider.internal(via, {
             value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell().storeUint(6, 32).storeUint(opts.query_id, 64).storeCoins(opts.newPrice).endCell(),
+            body: beginCell()
+                .storeUint(6, 32)
+                .storeUint(opts.query_id, 64)
+                .storeCoins(opts.newPrice)
+                .storeRef(opts.feesCell)
+                .endCell(),
         });
     }
 
